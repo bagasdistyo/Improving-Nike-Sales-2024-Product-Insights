@@ -1,0 +1,80 @@
+1. url dataset : https://www.kaggle.com/datasets/pinisetty/nike-sales-2024-data-analysis-using-excel?select=nike_sales_2024.csv
+
+2. DDL pembuatan table :
+
+import psycopg2
+from psycopg2 import sql
+
+connection = psycopg2.connect(
+    user="airflow",
+    password="airflow",
+    host="localhost",
+    port=5434,
+    database="airflow"
+)
+
+cursor = connection.cursor()
+
+q = sql.SQL('''
+CREATE TABLE IF NOT EXISTS sales (
+    id SERIAL PRIMARY KEY,
+    "Month" VARCHAR(20),
+    "Region" VARCHAR(100),
+    "Main_Category" VARCHAR(100),
+    "Sub_Category" VARCHAR(100),
+    "Product_Line" VARCHAR(100),
+    "Price_Tier" VARCHAR(50),
+    "Units_Sold" INTEGER,
+    "Revenue_USD" BIGINT,
+    "Online_Sales_Percentage" INTEGER,
+    "Retail_Price" INTEGER
+);
+''')
+
+cursor.execute(q)
+connection.commit()
+cursor.close()
+connection.close()
+
+3. DML insert table :
+import pandas as pd
+import psycopg2
+
+# Baca file CSV
+df = pd.read_csv('P2M3_bagas_distyo_data_raw.csv')
+
+# Koneksi ke PostgreSQL
+connection = psycopg2.connect(
+    user="airflow",
+    password="airflow",
+    host="localhost",
+    port=5434,
+    database="airflow"
+)
+cursor = connection.cursor()
+
+# Loop baris per baris dan masukkan ke database
+for _, row in df.iterrows():
+    cursor.execute('''
+        INSERT INTO sales (
+            "Month", "Region", "Main_Category", "Sub_Category", 
+            "Product_Line", "Price_Tier", "Units_Sold", 
+            "Revenue_USD", "Online_Sales_Percentage", "Retail_Price"
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    ''', (
+        row['Month'],
+        row['Region'],
+        row['Main_Category'],
+        row['Sub_Category'],
+        row['Product_Line'],
+        row['Price_Tier'],
+        int(row['Units_Sold']),
+        int(row['Revenue_USD']),
+        float(row['Online_Sales_Percentage']),
+        float(row['Retail_Price'])
+    ))
+
+connection.commit()
+cursor.close()
+connection.close()
+
